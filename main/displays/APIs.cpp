@@ -3,6 +3,7 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
+#include "esp_crt_bundle.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -73,19 +74,24 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt)
 
 unsigned int getBTCprice(void)
 {
-    static char price_str[32];
-
     if ((mBTCUpdate == 0) || (esp_timer_get_time() / 1000 - mBTCUpdate > UPDATE_BTC_min * 60)) {
         esp_http_client_config_t config = {
             .url = getBTCAPI,
             .event_handler = http_event_handler,
+            .crt_bundle_attach = esp_crt_bundle_attach,
+            .skip_cert_common_name_check = false,
+            .transport_type = HTTP_TRANSPORT_OVER_SSL,
+            .is_async = false,
+            .timeout_ms = 5000,
+            .keep_alive_enable = true
         };
 
         esp_http_client_handle_t client = esp_http_client_init(&config);
         esp_err_t err = esp_http_client_perform(client);
 
         if (err == ESP_OK) {
-            ESP_LOGI("HTTP", "HTTP Status = %d, content_length = %lld", esp_http_client_get_status_code(client),
+            ESP_LOGI("HTTP", "HTTP Status = %d, content_length = %lld", 
+                     esp_http_client_get_status_code(client),
                      esp_http_client_get_content_length(client));
             mBTCUpdate = esp_timer_get_time() / 1000;
         } else {
