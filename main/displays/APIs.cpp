@@ -74,36 +74,25 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt)
 
 unsigned int getBTCprice(void)
 {
-
     if ((mBTCUpdate == 0) || (esp_timer_get_time() / 1000 - mBTCUpdate > UPDATE_BTC_min * 60)) {
-        HTTPClient http;
-      try {
-          // Use the new API endpoint
-          http.begin(getBTCAPI);
-          int httpCode = http.GET();
+        esp_http_client_config_t config = {
+            .url = "https://mempool.space/api/v1/prices",
+            .event_handler = http_event_handler,
+        };
 
-          if (httpCode == HTTP_CODE_OK) {
-              String payload = http.getString();
+        esp_http_client_handle_t client = esp_http_client_init(&config);
+        esp_err_t err = esp_http_client_perform(client);
 
-              // Parse the JSON response
-              DynamicJsonDocument doc(2048); // Increase size if needed
-              deserializeJson(doc, payload);
+        if (err == ESP_OK) {
+            ESP_LOGI("HTTP", "HTTP Status = %d, content_length = %lld", 
+                     esp_http_client_get_status_code(client),
+                     esp_http_client_get_content_length(client));
+            mBTCUpdate = esp_timer_get_time() / 1000;
+        } else {
+            ESP_LOGE("HTTP", "HTTP GET request failed: %s", esp_err_to_name(err));
+        }
 
-              // Extract the Bitcoin price from the new API response
-              if (doc.containsKey("quotes") && doc["quotes"].containsKey("USD")) {
-                  bitcoin_price = doc["quotes"]["USD"]["price"].as<double>();
-              }
-
-              doc.clear();
-
-              // Update the last fetch time
-              mBTCUpdate = millis();
-          }
-
-          http.end();
-      } catch (...) {
-          http.end();
-      }
+        esp_http_client_cleanup(client);
     }
 
     return bitcoin_price;
