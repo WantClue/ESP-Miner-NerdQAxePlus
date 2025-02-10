@@ -4,6 +4,7 @@
 #include "esp_http_client.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "HTTPClient.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/err.h"
@@ -73,7 +74,6 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt)
 
 unsigned int getBTCprice(void)
 {
-    static char price_str[32];
 
     if ((mBTCUpdate == 0) || (esp_timer_get_time() / 1000 - mBTCUpdate > UPDATE_BTC_min * 60)) {
         HTTPClient http;
