@@ -5,7 +5,7 @@ import { AuthGuard } from './app-auth-guard.service';
 const routes: Routes = [
   {
     path: 'pages',
-    //canActivate: [AuthGuard], <-- Remove comment to enable auth guard. Remeber to setup NbAuthServiceModule in @core accordingly with yuor backend
+    canActivate: [AuthGuard], //<-- Remove comment to enable auth guard. Remeber to setup NbAuthServiceModule in @core accordingly with yuor backend
     loadChildren: () => import('./pages/pages.module')
       .then(m => m.PagesModule),
   },

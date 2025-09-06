@@ -19,6 +19,7 @@
 #include "handler_restart.h"
 #include "handler_file.h"
 #include "handler_alert.h"
+#include "handler_auth.h"
 
 #pragma GCC diagnostic error "-Wall"
 #pragma GCC diagnostic error "-Wextra"
@@ -112,7 +113,7 @@ esp_err_t start_rest_server(void * pvParameters)
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.uri_match_fn = httpd_uri_match_wildcard;
-    config.max_uri_handlers = 20;
+    config.max_uri_handlers = 32;
     config.lru_purge_enable = true;
     config.max_open_sockets = 10;
     config.stack_size = 12288;
@@ -201,6 +202,39 @@ esp_err_t start_rest_server(void * pvParameters)
         .uri = "/api/alert/test", .method = HTTP_POST, .handler = POST_test_alert, .user_ctx = rest_context};
     httpd_register_uri_handler(http_server, &alert_test_uri);
 
+    /* Authentication endpoints */
+    httpd_uri_t auth_signin_uri = {
+        .uri = "/api/v1/auth/sign-in", .method = HTTP_POST, .handler = POST_auth_signin, .user_ctx = rest_context};
+    httpd_register_uri_handler(http_server, &auth_signin_uri);
+
+    httpd_uri_t auth_signout_uri = {
+        .uri = "/api/v1/auth/sign-out", .method = HTTP_POST, .handler = POST_auth_signout, .user_ctx = rest_context};
+    httpd_register_uri_handler(http_server, &auth_signout_uri);
+
+    httpd_uri_t auth_request_pass_uri = {
+        .uri = "/api/v1/auth/request-pass", .method = HTTP_POST, .handler = POST_auth_request_pass, .user_ctx = rest_context};
+    httpd_register_uri_handler(http_server, &auth_request_pass_uri);
+
+    httpd_uri_t auth_reset_pass_uri = {
+        .uri = "/api/v1/auth/reset-pass", .method = HTTP_POST, .handler = POST_auth_reset_pass, .user_ctx = rest_context};
+    httpd_register_uri_handler(http_server, &auth_reset_pass_uri);
+
+    httpd_uri_t auth_refresh_token_uri = {
+        .uri = "/api/v1/auth/refresh-token", .method = HTTP_POST, .handler = POST_auth_refresh_token, .user_ctx = rest_context};
+    httpd_register_uri_handler(http_server, &auth_refresh_token_uri);
+
+    /* OPTIONS handlers for CORS preflight requests */
+    httpd_uri_t auth_signin_options_uri = {
+        .uri = "/api/v1/auth/sign-in", .method = HTTP_OPTIONS, .handler = handle_options_request, .user_ctx = NULL};
+    httpd_register_uri_handler(http_server, &auth_signin_options_uri);
+
+    httpd_uri_t auth_signout_options_uri = {
+        .uri = "/api/v1/auth/sign-out", .method = HTTP_OPTIONS, .handler = handle_options_request, .user_ctx = NULL};
+    httpd_register_uri_handler(http_server, &auth_signout_options_uri);
+
+    httpd_uri_t auth_refresh_options_uri = {
+        .uri = "/api/v1/auth/refresh-token", .method = HTTP_OPTIONS, .handler = handle_options_request, .user_ctx = NULL};
+    httpd_register_uri_handler(http_server, &auth_refresh_options_uri);
 
     httpd_uri_t update_post_ota_firmware = {
         .uri = "/api/system/OTA", .method = HTTP_POST, .handler = POST_OTA_update, .user_ctx = NULL};
